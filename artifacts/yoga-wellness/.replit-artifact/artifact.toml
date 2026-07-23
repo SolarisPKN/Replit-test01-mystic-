@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Yoga & Bienestar"
+version = "1.0.0"
+id = "artifacts/yoga-wellness"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20141
+
+[services.development]
+run = "pnpm --filter @workspace/yoga-wellness run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/yoga-wellness", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/yoga-wellness/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20141"
+BASE_PATH = "/"

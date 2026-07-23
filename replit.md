@@ -1,45 +1,65 @@
-# [Project name]
+# Yoga & Bienestar
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Sitio web para un estudio de yoga y bienestar holístico. Tiene dos caras: un sitio público para clientes y un panel de administración para la profesora.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/api-server run dev` — API server (port 8080)
+- `pnpm --filter @workspace/yoga-wellness run dev` — Frontend (port 20141)
+- `pnpm run typecheck` — typecheck completo
+- `pnpm run typecheck:libs` — solo libs (ejecutar tras cambios en lib/)
+- `pnpm --filter @workspace/api-spec run codegen` — regenerar hooks y schemas
+- `pnpm --filter @workspace/db run push` — aplicar cambios de schema DB
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React + Vite + Tailwind + shadcn/ui + wouter + TanStack Query
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Validación: Zod (`zod/v4`), `drizzle-zod`
+- Codegen: Orval (OpenAPI → hooks + Zod schemas)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
-
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- `lib/api-spec/openapi.yaml` — contrato de API (fuente de verdad)
+- `lib/db/src/schema/` — tablas: `students.ts`, `payments.ts`, `orders.ts`
+- `artifacts/api-server/src/routes/` — rutas: `students.ts`, `payments.ts`, `orders.ts`, `admin.ts`
+- `artifacts/yoga-wellness/src/` — todo el frontend
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+**Sitio público:**
+- `/` — Landing page: clases de yoga como servicio principal + servicios complementarios de bienestar energético
+- `/servicios` — Detalle de todos los servicios: yoga, carta astral, numerología, tarot, radiomancía, reiki, péndulo
+- `/pedido` — Formulario público para pedir un servicio (llega al panel admin)
+
+**Panel de administración** (`/admin`):
+- `/admin` — Dashboard con estadísticas en tiempo real (alumnas, pedidos, pagos del mes, gráfico por servicio)
+- `/admin/alumnas` — Lista de alumnas (filtrable por activas/inactivas)
+- `/admin/alumnas/nueva` — Alta de nueva alumna
+- `/admin/alumnas/:id` — Ficha completa: datos, tipo de pago, flexibilidad en 4 posturas (0–10), notas médicas, observaciones, historial de pagos
+- `/admin/pedidos` — Bandeja de pedidos de servicios con gestión de estado
+
+## Architecture decisions
+
+- Sin autenticación en el admin por ahora (acceso directo por URL `/admin`)
+- Flexibilidad medida en 4 posturas: Paschimottanasana, Ustrasana, Trikonasana, Ardha Matsyendrasana (score 0–10)
+- Tipos de pago: mensual, semanal, clase suelta
+- Servicios: yoga_class | carta_astral | numerologia | tarot | radiomancia | reiki | pendulo
+- Estados de pedido: pending | in_progress | completed | cancelled
+- `amount` en pagos usa `numeric` en DB → se convierte a/desde string en la capa de ruta
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+_Populate as you build._
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Tras cambios en `lib/db/src/schema/`, correr `pnpm run typecheck:libs` antes de `typecheck` en el API server
+- `amount` en `paymentsTable` es `numeric` en Drizzle → convertir a `String(amount)` al insertar
+- `periodStart`/`periodEnd` son `date` mode string → convertir con `String()` al insertar
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Ver skill `pnpm-workspace` para estructura del monorepo

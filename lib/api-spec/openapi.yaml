@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API for Yoga & Bienestar - studio management and public services
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: students
+    description: Student management (alumnas)
+  - name: payments
+    description: Payment records
+  - name: orders
+    description: Service orders (pedidos)
+  - name: admin
+    description: Admin dashboard
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +31,528 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Students ─────────────────────────────────────────────────────────────
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List all students
+      parameters:
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create a new student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentInput"
+      responses:
+        "201":
+          description: Created student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get student by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Student record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateStudent
+      tags: [students]
+      summary: Update student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentUpdate"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteStudent
+      tags: [students]
+      summary: Delete student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # ── Payments ──────────────────────────────────────────────────────────────
+  /students/{id}/payments:
+    get:
+      operationId: listStudentPayments
+      tags: [payments]
+      summary: List payments for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Record a payment for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Created payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{id}:
+    delete:
+      operationId: deletePayment
+      tags: [payments]
+      summary: Delete a payment record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # ── Service Orders ────────────────────────────────────────────────────────
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List all service orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, cancelled]
+        - name: service_type
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Submit a service request (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateOrder
+      tags: [orders]
+      summary: Update order status / admin notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+
+  # ── Admin stats ───────────────────────────────────────────────────────────
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ── Student ──────────────────────────────────────────────────────────────
+    Student:
+      type: object
+      required: [id, name, active, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        paymentType:
+          type: ["string", "null"]
+          enum: [monthly, weekly, per_class, null]
+        # Flexibility scores 0–10 for 4 poses
+        flexForwardBend:
+          type: ["integer", "null"]
+        flexBackwardBend:
+          type: ["integer", "null"]
+        flexSideBend:
+          type: ["integer", "null"]
+        flexSeatedTwist:
+          type: ["integer", "null"]
+        medicalNotes:
+          type: ["string", "null"]
+        observations:
+          type: ["string", "null"]
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    StudentInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+        paymentType:
+          type: string
+          enum: [monthly, weekly, per_class]
+        flexForwardBend:
+          type: integer
+          minimum: 0
+          maximum: 10
+        flexBackwardBend:
+          type: integer
+          minimum: 0
+          maximum: 10
+        flexSideBend:
+          type: integer
+          minimum: 0
+          maximum: 10
+        flexSeatedTwist:
+          type: integer
+          minimum: 0
+          maximum: 10
+        medicalNotes:
+          type: string
+        observations:
+          type: string
+        active:
+          type: boolean
+
+    StudentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+        paymentType:
+          type: string
+          enum: [monthly, weekly, per_class]
+        flexForwardBend:
+          type: integer
+          minimum: 0
+          maximum: 10
+        flexBackwardBend:
+          type: integer
+          minimum: 0
+          maximum: 10
+        flexSideBend:
+          type: integer
+          minimum: 0
+          maximum: 10
+        flexSeatedTwist:
+          type: integer
+          minimum: 0
+          maximum: 10
+        medicalNotes:
+          type: string
+        observations:
+          type: string
+        active:
+          type: boolean
+
+    # ── Payment ──────────────────────────────────────────────────────────────
+    Payment:
+      type: object
+      required: [id, studentId, paymentType, paidAt]
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        paymentType:
+          type: string
+          enum: [monthly, weekly, per_class]
+        amount:
+          type: ["number", "null"]
+        periodStart:
+          type: ["string", "null"]
+          format: date
+        periodEnd:
+          type: ["string", "null"]
+          format: date
+        paidAt:
+          type: string
+          format: date-time
+        notes:
+          type: ["string", "null"]
+
+    PaymentInput:
+      type: object
+      required: [paymentType]
+      properties:
+        paymentType:
+          type: string
+          enum: [monthly, weekly, per_class]
+        amount:
+          type: number
+        periodStart:
+          type: string
+          format: date
+        periodEnd:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    # ── Order ─────────────────────────────────────────────────────────────────
+    Order:
+      type: object
+      required: [id, clientName, serviceType, status, createdAt]
+      properties:
+        id:
+          type: integer
+        clientName:
+          type: string
+        clientEmail:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        serviceType:
+          type: string
+          enum:
+            - yoga_class
+            - carta_astral
+            - numerologia
+            - tarot
+            - radiomancia
+            - reiki
+            - pendulo
+        message:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderInput:
+      type: object
+      required: [clientName, serviceType]
+      properties:
+        clientName:
+          type: string
+          minLength: 1
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        serviceType:
+          type: string
+          enum:
+            - yoga_class
+            - carta_astral
+            - numerologia
+            - tarot
+            - radiomancia
+            - reiki
+            - pendulo
+        message:
+          type: string
+
+    OrderUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        adminNotes:
+          type: string
+
+    # ── Admin Stats ───────────────────────────────────────────────────────────
+    AdminStats:
+      type: object
+      required:
+        [
+          totalStudents,
+          activeStudents,
+          pendingOrders,
+          ordersThisMonth,
+          paymentsThisMonth,
+        ]
+      properties:
+        totalStudents:
+          type: integer
+        activeStudents:
+          type: integer
+        pendingOrders:
+          type: integer
+        ordersThisMonth:
+          type: integer
+        paymentsThisMonth:
+          type: integer
+        ordersByService:
+          type: array
+          items:
+            type: object
+            required: [serviceType, count]
+            properties:
+              serviceType:
+                type: string
+              count:
+                type: integer
