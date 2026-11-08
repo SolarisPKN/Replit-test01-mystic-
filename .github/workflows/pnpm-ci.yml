@@ -25,4 +25,8 @@ jobs:
       - name: Install reproducibly (keep release-age protections)
         run: pnpm install --frozen-lockfile
       - name: Typecheck and build monorepo
+        # Replit Vite config requires these dev-server settings even for build.
+        env:
+          PORT: '3000'
+          BASE_PATH: '/'
         run: pnpm run build
