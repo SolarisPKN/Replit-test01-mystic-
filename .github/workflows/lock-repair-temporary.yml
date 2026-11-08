@@ -4,7 +4,7 @@ on:
     branches:
       - fix/esbuild-lock-sync-20261108
 permissions:
-  contents: read
+  contents: write
 jobs:
   lock:
     runs-on: ubuntu-latest
@@ -20,6 +20,20 @@ jobs:
           node-version: '22'
       - name: Regenerate lockfile without executing dependency scripts
         run: pnpm install --lockfile-only --ignore-scripts
+      - name: Verify lockfile matches the updated version
+        run: |
+          grep -q 'specifier: 0.28.1' pnpm-lock.yaml
+          grep -q 'esbuild@0.28.1:' pnpm-lock.yaml
+          if grep -q 'esbuild@0.27.3:' pnpm-lock.yaml; then exit 1; fi
+      - name: Commit the generated lockfile to the repair branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- pnpm-lock.yaml; then
+            git add -- pnpm-lock.yaml
+            git commit -m "fix(deps): regenerate frozen pnpm lockfile for esbuild 0.28.1"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
       - name: Export exact generated lockfile
         uses: actions/upload-artifact@v4
         with:
